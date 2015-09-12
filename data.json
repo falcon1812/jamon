@@ -1,3 +1,4 @@
 {
-    "data": "esto"
+    "datos": ["dato1", "dato2", "dato3"],
+    "info": "nada"
 }
