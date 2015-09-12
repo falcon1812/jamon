@@ -22,7 +22,6 @@
     <li><a href="#/page1">Pagina 1</a></li>
     <li><a href="#/page2">Pagina 2</a></li>
   </ul>
-    <hr>
   <div id="view"></div>
   <script>
   route('/', 'home', function () {});
