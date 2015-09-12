@@ -9,12 +9,12 @@
         <h1>Rutas principales</h1>
     </script>
     <script type="text/html" id="template1">
-        <h1>Pagina 1: <%= greeting %></h1>
+        <h1>Pagina 1: <%= encabezado %></h1>
         <p id="loading"><%= texto %></p>
     </script>
     <script type="text/html" id="template2">
-        <h1>Pagina 2: <%= heading %></h1>
-        <p><%= heading %></p>
+        <h1>Pagina 2: <%= encabezado %></h1>
+        <p><%= encabezado %></p>
     </script>
 </head>
 <body>
@@ -28,7 +28,7 @@
 $(document).ready(function($) {
     route('/', 'home', function () {});
     route('/page1', 'template1', function () {
-        this.greeting = 'Rutas de js, like a boss';
+        this.encabezado = 'Rutas de js, like a boss';
         this.texto = 'Cargando';
         // Tarda 0.5s
         setTimeout(function () {
@@ -42,7 +42,7 @@ $(document).ready(function($) {
         }.bind(this), 500);
     });
     route('/page2', 'template2', function () {
-        this.heading = 'Hola';
+        this.encabezado = 'Hola';
     });
 });
 </script>
