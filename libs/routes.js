@@ -1,6 +1,15 @@
+/* Jamon MVC JavaScript 
+ * License MIT 
+ * Download from / Descarga desde -> falcon1812.github.io/jamon
+ * Made with a lot of hard work and ♡. / Hecho con trabajo duro y ♡.
+ * @author Christian Falcon.
+ */
+
 /**
- * @autor Christian Falcon
  * Funciones de enrutamiento
+ * Routes functions
+ * @author Christian Falcon
+ * @return JavaScript class
  */
 (function(){
     var cache = {};
@@ -10,7 +19,7 @@
     // Generar una funcion reutilizable que servira como una plantilla like a boss B)
     // Introducir los datos mientras que el uso de variables locales con ( ) { }
     new Function("obj","var p=[],print=function(){p.push.apply(p,arguments);};"+"with(obj){p.push('" +
-    // Convierte la template en puro JS
+    // Convierte la template en puro JS, para poder manipular.
          str
             .replace(/[\r\t\n]/g, " ")
             .split("<%").join("\t")
@@ -73,4 +82,339 @@
     this.addEventListener('load', router);
     // Lanza la funcion de la ruta.
     this.route = route;
+})();
+
+/**
+ * Funciones de carga de html en la pagina
+ * @author Christian Falcon
+ * @return JavaScript class
+ */
+var listo = (function(){
+    var listoListado,
+        DOMContentLoaded,
+        class2type = {};
+        class2type["[object Boolean]"] = "boolean";
+        class2type["[object Number]"] = "number";
+        class2type["[object String]"] = "string";
+        class2type["[object Function]"] = "function";
+        class2type["[object Array]"] = "array";
+        class2type["[object Date]"] = "date";
+        class2type["[object RegExp]"] = "regexp";
+        class2type["[object Object]"] = "object";
+
+    var ObjetoListo = {
+        // Esta listo el DOM para darle uso? 
+        estaListo: false,
+        // Comienza un contador de espera para el DOM
+        readyWait: 1,
+        // Espera que el objeto este listo, si no aumenta el tiempo de espera.
+        holdReady: function(espera) {
+            if (espera) {
+                ObjetoListo.readyWait++;
+            } else {
+                ObjetoListo.ready(true);
+            }
+        },
+        // Se habilita cuando el DOM esta lesto
+        listo: function(wait) {
+            // Si aun esta cargando o el DOM no esta listo lo pone lento.
+            if ( (wait === true && !--ObjetoListo.readyWait) || (wait !== true && !ObjetoListo.estaListo) ) {
+                // Verifica que todo el body este cargado, IE se tarde burda.
+                if (!document.body) {
+                    return setTimeout(ObjetoListo.ready, 1);
+                }
+
+                // Guardo que el DOM esta listo
+                ObjetoListo.estaListo = true;
+                // Si algun evento dentro del DOM es disparado entra aca
+                if (wait !== true && --ObjetoListo.readyWait > 0) {
+                    return;
+                }
+                listoListado.resolveWith(document, [ObjetoListo]);
+            }
+        },
+        bindReady: function() {
+            if (listoListado) {
+                return;
+            }
+            listoListado = ObjetoListo._Deferred();
+            if (document.readyState === "complete") {
+                // Hace que los script tarden para tener tiempo de que esten en sincronia
+                return setTimeout( ObjetoListo.listo, 1 );
+            }
+            // Mozilla, Opera y chrome soportan este evento, IE es gay
+            if (document.addEventListener) {
+                document.addEventListener("DOMContentLoaded", DOMContentLoaded, false);
+                window.addEventListener("load", ObjetoListo.ready, false);
+            // Para cuando usan IE
+            } else if (document.attachEvent) {
+                // Se tarda pero tambien carga los iframe
+                document.attachEvent("onreadystatechange",DOMContentLoaded);
+                window.attachEvent("onload",ObjetoListo.ready);
+                // Verifica si el documento esta listo
+                var toplevel = false;
+                    try {
+                        toplevel = window.frameElement == null;
+                    } catch(e) {}
+                if (document.documentElement.doScroll && toplevel) {
+                    doScrollCheck();
+                }
+            }
+        },
+        _Deferred: function() {
+            var // Lista de llamadas
+                llamadas = [],
+                // Guardados [ contexto , argumentos = args ]
+                disparados,
+                // Evita que se disparen los eventos antes de estar cargados
+                disparando,
+                // Bandera que identifica cuando fue cancelado
+                cancelado,
+                // Diferido es donde se ejecuta un mierdero
+                diferido  = {
+                    // hace( f1, f2, bla, bla, ...) 
+                    done: function() {
+                        if (!cancelado) {
+                            var args = arguments, i, length, elem, type, _disparados;
+                            if (disparados) {
+                                _disparados = disparados;
+                                disparados = 0;
+                            }
+                            for ( i = 0, length = args.length; i < length; i++ ) {
+                                elem = args[ i ];
+                                type = ObjetoListo.type(elem);
+                                if (type === "array") {
+                                    diferido.done.apply(diferido, elem);
+                                } else if (type === "function") {
+                                    llamadas.push(elem);
+                                }
+                            }
+                            if ( _disparados ) {
+                                diferido.resolveWith( _disparados[ 0 ], _disparados[ 1 ] );
+                            }
+                        }
+                        return this;
+                    },
+                    // Resuelve con el contexto y el argumento dado
+                    resolveWith: function( context, args ) {
+                        if ( cancelado && !disparados && !disparando) {
+                            // Se asegura de que los argumentos esten bien
+                            args = args || [];
+                            disparando = 1;
+                            try {
+                                while( llamadas[ 0 ] ) {
+                                    llamadas.shift().apply( context, args );
+                                }
+                            }
+                            finally {
+                                disparados = [ context, args ];
+                                disparando = 0;
+                            }
+                        }
+                        return this;
+                    },
+                    // Resuelve con el contexto y el argumento dado
+                    resolve: function() {
+                        diferido.resolveWith( this, arguments );
+                        return this;
+                    },
+                    isResolved: function() {
+                        return !!( disparando || disparados );
+                    },
+                    // Cancelar
+                    cancel: function() {
+                        cancelado = 1;
+                        llamadas = [];
+                        return this;
+                    }
+                };
+            return diferido;
+        },
+        type: function(obj) {
+            return obj == null ?
+                String(obj) :
+                class2type[ Object.prototype.toString.call(obj) ] || "object";
+        }
+    }
+    // DOM esta listo para IE
+    function doScrollCheck() {
+        if (ObjetoListo.estaListo) {
+            return;
+        }
+        try {
+            // Si usan IE, pilla este truco por Diego Perini
+            // http://javascript.nwbox.com/IEContentLoaded/
+            document.documentElement.doScroll("left");
+        } catch(e) {
+            setTimeout( doScrollCheck, 1 );
+            return;
+        }
+        // Ejecuta funcion de espera.
+        ObjetoListo.listo();
+    }
+    // Limpia funciones de documento.ready
+    if (document.addEventListener) {
+        DOMContentLoaded = function() {
+            document.removeEventListener( "DOMContentLoaded", DOMContentLoaded, false );
+            ObjetoListo.listo();
+        };
+    } else if (document.attachEvent) {
+        DOMContentLoaded = function() {
+            // Verifica que todo el body este cargado, IE se tarde burda.
+            if (document.readyState === "complete") {
+                document.detachEvent( "onreadystatechange", DOMContentLoaded );
+                ObjetoListo.listo();
+            }
+        };
+    }
+    function listo(fn) {
+        // Adjunta
+        ObjetoListo.bindReady();
+        var type = ObjetoListo.type(fn);
+        // Hace un callback / llamada
+        listoListado.done(fn);// Esto es resultado de la funcion _Deferred()
+    }
+    //console.log(listo);
+    return listo;
+})();
+
+/**
+ * Funcion para manejo de etiqueta xhtml en el DOM.
+ * @param [attribute, atributo] xhtml 
+ * @author Christian Falcon
+ * @return array[html.object]
+ */
+function getElement(atributo)
+{
+    var Coincidencias = [];
+    var TodosLosElementos = document.getElementsByTagName('*'); // Busca en todo el DOM
+        for (var i = 0, n = TodosLosElementos.length; i < n; i++)
+        {
+            if (TodosLosElementos[i].getAttribute(atributo) !== null)
+            {
+                // Se crea arreglo con todos lo elementos con ese atributo
+                Coincidencias.push(TodosLosElementos[i]);
+            }
+        }
+    return Coincidencias;
+}
+
+/**
+ * Funcion de ajax para hacer peticiones
+ * @author Christian Falcon
+ * @return Peticion / Request Ajax
+ */   
+var ajax = {};
+ajax.x = function() {
+    if (typeof XMLHttpRequest !== 'undefined') {
+        return new XMLHttpRequest();  
+    }
+    var versions = [
+        "MSXML2.XmlHttp.6.0",
+        "MSXML2.XmlHttp.5.0",   
+        "MSXML2.XmlHttp.4.0",  
+        "MSXML2.XmlHttp.3.0",   
+        "MSXML2.XmlHttp.2.0",  
+        "Microsoft.XmlHttp"
+    ];
+    var xhr;
+        for(var i = 0; i < versions.length; i++) {  
+            try {  
+                xhr = new ActiveXObject(versions[i]);  
+                break;  
+            } catch (e) {
+            }  
+        }
+        return xhr;
+    };
+    ajax.send = function(url, callback, method, data, sync) {
+        var x = ajax.x();
+        x.open(method, url, sync);
+        x.onreadystatechange = function() {
+            if (x.readyState == 4) {
+                callback(x.responseText)
+            }
+        };
+        if (method == 'POST') {
+            x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        }
+        x.send(data)
+    };
+    ajax.get = function(url, data, callback, sync) {
+        var query = [];
+        for (var key in data) {
+            query.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]));
+        }
+        ajax.send(url + (query.length ? '?' + query.join('&') : ''), callback, 'GET', null, sync)
+    };
+    ajax.post = function(url, data, callback, sync) {
+        var query = [];
+        for (var key in data) {
+            query.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]));
+        }
+        ajax.send(url, callback, 'POST', query.join('&'), sync)
+};
+
+/**
+ * Funcion que limpia textos y arreglos de texto
+ * @param [texto|caracter]  
+ * @author Christian Falcon
+ * @return Description of returned value.
+ */
+function cleanString(valor, elemento)
+{
+    var resultado;
+    // Verifico que sea de tipo array
+    if (valor.constructor === Array) {
+        for (var i = 0; i < valor.length; i++) {
+            resultado = valor[i].replace(elemento ,'');
+        }
+    } else {
+        resultado = valor.replace(elemento ,'');
+    }
+    return resultado;
+}
+
+/**
+ * Funcion para borrar cosas por Ajax
+ * @param id elemento
+ * @author Christian Falcon
+ * @return JavaScript class
+ */
+var thisdelete = (function() {
+    thisdelete: function thisdelete() {
+            var accion = getElement('delete');
+                for (var i = 0; i < accion.length; i++) {
+                accion[i].onclick = function() {
+                    var valor = this.getAttribute('delete');
+                    var controlador = window.location.pathname.split("/");
+                    var url = controlador + '/destroy/';
+                    var uri = cleanString(url,',');
+                    ajax.post(uri, {id: valor}, function() {});
+                }
+            } 
+        } 
+    return thisdelete;
+})();
+
+/**
+ * Funcion para crear cosas por Ajax
+ * @param 
+ * @author Christian Falcon
+ * @return Description of returned value.
+ */
+var thiscreate = (function() {
+    thiscreate: function thiscreate() {
+            var accion = getElement('create');
+                for (var i = 0; i < accion.length; i++) {
+                accion[i].onclick = function() {
+                    var valor = this.getAttribute('creation');
+                    var controlador = window.location.pathname.split("/");
+                    var url = controlador + '/create/';
+                    var uri = cleanString(url,',');
+                    ajax.post(uri, {id: valor}, function() {});
+                }
+            } 
+        } 
+    return thiscreate;
 })();
