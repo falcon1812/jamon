@@ -34,7 +34,7 @@
 };
 })();
 
-(function () {
+var controller = (function () {
     // Guardo las rutas en routes, lo pongo en ingles porque se ve mas pro.
     var routes = {};
     function route (path, templateId, controlador) {
@@ -89,7 +89,7 @@
  * @author Christian Falcon
  * @return JavaScript class
  */
-var listo = (function(){
+(function(){
     var listoListado,
         DOMContentLoaded,
         class2type = {};
@@ -108,17 +108,18 @@ var listo = (function(){
         // Comienza un contador de espera para el DOM
         readyWait: 1,
         // Espera que el objeto este listo, si no aumenta el tiempo de espera.
-        holdReady: function(espera) {
-            if (espera) {
+        holdReady: function(wait) {
+            if (wait) {
                 ObjetoListo.readyWait++;
+                console.log('prueba');
             } else {
                 ObjetoListo.ready(true);
             }
         },
         // Se habilita cuando el DOM esta lesto
-        listo: function(wait) {
+        listo: function(espera) {
             // Si aun esta cargando o el DOM no esta listo lo pone lento.
-            if ( (wait === true && !--ObjetoListo.readyWait) || (wait !== true && !ObjetoListo.estaListo) ) {
+            if ( (espera === true && !--ObjetoListo.readyWait) || (espera !== true && !ObjetoListo.estaListo) ) {
                 // Verifica que todo el body este cargado, IE se tarde burda.
                 if (!document.body) {
                     return setTimeout(ObjetoListo.ready, 1);
@@ -127,7 +128,7 @@ var listo = (function(){
                 // Guardo que el DOM esta listo
                 ObjetoListo.estaListo = true;
                 // Si algun evento dentro del DOM es disparado entra aca
-                if (wait !== true && --ObjetoListo.readyWait > 0) {
+                if (espera !== true && --ObjetoListo.readyWait > 0) {
                     return;
                 }
                 listoListado.resolveWith(document, [ObjetoListo]);
@@ -137,10 +138,10 @@ var listo = (function(){
             if (listoListado) {
                 return;
             }
-            listoListado = ObjetoListo._Deferred();
+            listoListado = ObjetoListo._Diferido();
             if (document.readyState === "complete") {
                 // Hace que los script tarden para tener tiempo de que esten en sincronia
-                return setTimeout( ObjetoListo.listo, 1 );
+                return setTimeout(ObjetoListo.listo, 1);
             }
             // Mozilla, Opera y chrome soportan este evento, IE es gay
             if (document.addEventListener) {
@@ -161,7 +162,7 @@ var listo = (function(){
                 }
             }
         },
-        _Deferred: function() {
+        _Diferido: function() {
             var // Lista de llamadas
                 llamadas = [],
                 // Guardados [ contexto , argumentos = args ]
@@ -181,7 +182,7 @@ var listo = (function(){
                                 disparados = 0;
                             }
                             for ( i = 0, length = args.length; i < length; i++ ) {
-                                elem = args[ i ];
+                                elem = args[i];
                                 type = ObjetoListo.type(elem);
                                 if (type === "array") {
                                     diferido.done.apply(diferido, elem);
@@ -189,25 +190,25 @@ var listo = (function(){
                                     llamadas.push(elem);
                                 }
                             }
-                            if ( _disparados ) {
-                                diferido.resolveWith( _disparados[ 0 ], _disparados[ 1 ] );
+                            if (_disparados) {
+                                diferido.resolveWith( _disparados[0], _disparados[1] );
                             }
                         }
                         return this;
                     },
                     // Resuelve con el contexto y el argumento dado
                     resolveWith: function( context, args ) {
-                        if ( cancelado && !disparados && !disparando) {
+                        if (cancelado && !disparados && !disparando) {
                             // Se asegura de que los argumentos esten bien
                             args = args || [];
                             disparando = 1;
                             try {
-                                while( llamadas[ 0 ] ) {
+                                while( llamadas[0] ) {
                                     llamadas.shift().apply( context, args );
                                 }
                             }
                             finally {
-                                disparados = [ context, args ];
+                                disparados = [context, args];
                                 disparando = 0;
                             }
                         }
@@ -231,9 +232,7 @@ var listo = (function(){
             return diferido;
         },
         type: function(obj) {
-            return obj == null ?
-                String(obj) :
-                class2type[ Object.prototype.toString.call(obj) ] || "object";
+            return obj == null ? String(obj) : class2type[Object.prototype.toString.call(obj)] || "object";
         }
     }
     // DOM esta listo para IE
@@ -246,7 +245,7 @@ var listo = (function(){
             // http://javascript.nwbox.com/IEContentLoaded/
             document.documentElement.doScroll("left");
         } catch(e) {
-            setTimeout( doScrollCheck, 1 );
+            setTimeout(doScrollCheck, 1 );
             return;
         }
         // Ejecuta funcion de espera.
@@ -255,14 +254,14 @@ var listo = (function(){
     // Limpia funciones de documento.ready
     if (document.addEventListener) {
         DOMContentLoaded = function() {
-            document.removeEventListener( "DOMContentLoaded", DOMContentLoaded, false );
+            document.removeEventListener( "DOMContentLoaded", DOMContentLoaded, false);
             ObjetoListo.listo();
         };
     } else if (document.attachEvent) {
         DOMContentLoaded = function() {
             // Verifica que todo el body este cargado, IE se tarde burda.
             if (document.readyState === "complete") {
-                document.detachEvent( "onreadystatechange", DOMContentLoaded );
+                document.detachEvent( "onreadystatechange", DOMContentLoaded);
                 ObjetoListo.listo();
             }
         };
@@ -273,8 +272,7 @@ var listo = (function(){
         var type = ObjetoListo.type(fn);
         // Hace un callback / llamada
         listoListado.done(fn);// Esto es resultado de la funcion _Deferred()
-    }
-    //console.log(listo);
+    };
     return listo;
 })();
 
@@ -297,7 +295,7 @@ function getElement(atributo)
             }
         }
     return Coincidencias;
-}
+};
 
 /**
  * Funcion de ajax para hacer peticiones
@@ -359,7 +357,7 @@ ajax.x = function() {
  * Funcion que limpia textos y arreglos de texto
  * @param [texto|caracter]  
  * @author Christian Falcon
- * @return Description of returned value.
+ * @return string
  */
 function cleanString(valor, elemento)
 {
@@ -376,6 +374,50 @@ function cleanString(valor, elemento)
 }
 
 /**
+ * Funcion para crear ruta hacia controlador de la pagina
+ * @param metodo del controlador
+ * @author Christian Falcon
+ * @return string(uri)
+ */
+function thismethod(method) {
+    var controlador = window.location.pathname.split("/");
+    var url = controlador[1] + '/' + method + '/';
+    var uri = cleanString(url, '.,#?'); // Limpio la url de variables y esas cosas
+    return uri;
+}
+
+/**
+ * Funcion que crea formularios
+ * @param ...
+ * @author Christian Falcon
+ * @return DOM
+ */
+function createform(append, attribute) {
+    var form = document.createElement("form");
+    for (var i = 0; i < attribute.length; i++) {
+        form.setAttribute(this ,this.value);
+        console.log(this);
+        console.log(this.value)
+    }
+    console.log(append);
+//    var dom = document.getElementsByTagName(whereappend).appendChild(form);
+//    return dom;
+}
+
+/**
+ * Funcion que crear inputs
+ * Funcion que crear inputs
+ * @param [string|array] el arreglo viene con objetos
+ * @author Christian Falcon
+ * @return DOM
+ */
+function createinput(append, attribute) {
+    var input = document.createElement("input"); //input element, text
+    input.setAttribute(attribute,attribute.value);
+    append.appendChild(input);
+}
+
+/**
  * Funcion para borrar cosas por Ajax
  * @param id elemento
  * @author Christian Falcon
@@ -387,10 +429,8 @@ var thisdelete = (function() {
                 for (var i = 0; i < accion.length; i++) {
                 accion[i].onclick = function() {
                     var valor = this.getAttribute('delete');
-                    var controlador = window.location.pathname.split("/");
-                    var url = controlador + '/destroy/';
-                    var uri = cleanString(url,',');
-                    ajax.post(uri, {id: valor}, function() {});
+                    var method = thismethod('destroy');
+                    ajax.post(method, {id: valor}, function() {});
                 }
             } 
         } 
@@ -401,20 +441,83 @@ var thisdelete = (function() {
  * Funcion para crear cosas por Ajax
  * @param 
  * @author Christian Falcon
- * @return Description of returned value.
+ * @return JavaScript class
  */
 var thiscreate = (function() {
     thiscreate: function thiscreate() {
             var accion = getElement('create');
                 for (var i = 0; i < accion.length; i++) {
-                accion[i].onclick = function() {
-                    var valor = this.getAttribute('creation');
-                    var controlador = window.location.pathname.split("/");
-                    var url = controlador + '/create/';
-                    var uri = cleanString(url,',');
-                    ajax.post(uri, {id: valor}, function() {});
+                accion[i].onsubmit = function() {
+                    // Obtengo el valor de create y verifico su metodo
+                    var metodo = this.getAttribute('create').toUpperCase(); 
+                    var method = thismethod('create'); // metodo del controlador en donde este
+                    var valor = this.querySelectorAll('[this]');
+                    var objectSend = {};
+                    for (var o = 0; o < valor.length; o++) {
+                        var objecto = valor[o].getAttribute('this');
+                        var objectovalor = valor[o].value;
+                        objectSend[objecto] = objectovalor;
+                    }
+                    if (metodo == 'POST') {
+                            ajax.post(method, objectSend, function() {}); 
+                    } else {
+                            ajax.get(method, objectSend, function() {}); 
+                    }
                 }
             } 
         } 
     return thiscreate;
+})();
+
+/**
+ * Funcion para mostrar todas las funciones ejecutadas (debug).
+ * @author Christian Falcon
+ * @param [name]
+ * @return [function=name].
+ */
+function debug(withFn) {
+    var nombre, fn;
+    for (nombre in window) {
+        fn = window[nombre];
+        if (typeof fn === 'function') {
+            window[nombre] = (function(nombre, fn) {
+                    var args = arguments;
+                    return function() {
+                        withFn.apply(this, args);
+                        return fn.apply(this, arguments);
+                    }
+            })(nombre, fn);
+        }
+    }
+}
+
+/**
+ * Funcion para editar cosas por Ajax
+ * @param id elemento
+ * @author Christian Falcon
+ * @return JavaScript class
+ */
+var getupdate = (function() {
+    getupdate: function getupdate() {
+            var accion = getElement('edit');
+                for (var i = 0; i < accion.length; i++) {
+                accion[i].onclick = function() {
+                    var valor = this.parentNode.parentElement;
+                    // obtengo el texto de los th de la tabla
+                    var th = valor.parentNode.parentElement.childNodes[1].childNodes[1].cells;
+                    for (var o = 0; o < valor.cells.length; o++) {
+                        var value = valor.cells[o].firstChild.data;
+                        value.trim() ? console.log(value) : 'tag html' ;
+                        console.log(th);
+                        var esto = {atributo:'true'};
+                        var veamos = createform('body',esto);
+                        console.log(veamos)
+//                            var method = thismethod('update');
+//                            ajax.post(uri, {id: valor}, function() {});
+                        
+                    }
+                }
+            } 
+        }
+    return getupdate;
 })();
