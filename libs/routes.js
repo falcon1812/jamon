@@ -119,7 +119,7 @@ var controller = (function () {
         // Se habilita cuando el DOM esta lesto
         listo: function(espera) {
             // Si aun esta cargando o el DOM no esta listo lo pone lento.
-            if ( (espera === true && !--ObjetoListo.readyWait) || (espera !== true && !ObjetoListo.estaListo) ) {
+            if ( (espera === true && !--ObjetoListo.readyWait) || (espera !== true && !ObjetoListo.estaListo)) {
                 // Verifica que todo el body este cargado, IE se tarde burda.
                 if (!document.body) {
                     return setTimeout(ObjetoListo.ready, 1);
@@ -277,6 +277,60 @@ var controller = (function () {
 })();
 
 /**
+ * Funcion que convierte string a object
+ * @param string
+ * @author Christian Falcon
+ * @return DOM
+ */
+var StringToDom = function(html) {
+   var MapaDeElementos = {
+        option: 	[ 1, "<select multiple='multiple'>", "</select>" ],
+        legend: 	[ 1, "<fieldset>", "</fieldset>" ],
+        area: 		[ 1, "<map>", "</map>" ],
+        param: 		[ 1, "<object>", "</object>" ],
+        thead: 		[ 1, "<table>", "</table>" ],
+        tr: 		[ 2, "<table><tbody>", "</tbody></table>" ],
+	   	td: 		[ 2, "<table><tbody><tr>", "</tr></tbody></table>" ],
+        col: 		[ 2, "<table><tbody></tbody><colgroup>", "</colgroup></table>" ],
+        td: 		[ 3, "<table><tbody><tr>", "</tr></tbody></table>" ],
+        body: 		[ 0, "", ""],
+		_default: 	[ 1, "<div>", "</div>"  ]
+    };
+    MapaDeElementos.optgroup = MapaDeElementos.option;
+    MapaDeElementos.tbody = MapaDeElementos.tfoot = MapaDeElementos.colgroup = MapaDeElementos.caption = MapaDeElementos.thead;
+    MapaDeElementos.th = MapaDeElementos.td;
+    var coincidencia = /<\s*\w.*?>/g.exec(html);
+    var elemento = document.createElement('div');
+    if(coincidencia != null) {
+        var tag = coincidencia[0].replace(/</g, '').replace(/>/g, '').split(' ')[0];
+        if(tag.toLowerCase() === 'body') {
+            var dom = document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
+            var body = document.createElement("body");
+            // Matiene los atributos
+            elemento.innerHTML = html.replace(/<body/g, '<div').replace(/<\/body>/g, '</div>');
+            var attrs = elemento.firstChild.attributes;
+            body.innerHTML = html;
+            for(var i=0; i<attrs.length; i++) {
+                body.setAttribute(attrs[i].name, attrs[i].value);
+            }
+            return body;
+        } else {
+            var Mapa = MapaDeElementos[tag] || MapaDeElementos._default, element;
+            html = Mapa[1] + html + Mapa[2];
+            element.innerHTML = html;
+            var j = Mapa[0]+1;
+            while(j--) {
+                elemento = elemento.lastChild;
+            }
+        }
+    } else {
+        elemento.innerHTML = html;
+        elemento = elemento.lastChild;
+    }
+    return elemento;
+}
+
+/**
  * Funcion para manejo de etiqueta xhtml en el DOM.
  * @param [attribute, atributo] xhtml 
  * @author Christian Falcon
@@ -388,20 +442,32 @@ function thismethod(method) {
 
 /**
  * Funcion que crea formularios
- * @param ...
+ * @param {object} objeto con todos los atributos
  * @author Christian Falcon
  * @return DOM
  */
-function createform(append, attribute) {
+function createform(attribute) {
     var form = document.createElement("form");
-    for (var i = 0; i < attribute.length; i++) {
-        form.setAttribute(this ,this.value);
-        console.log(this);
-        console.log(this.value)
+    var NombreObjectos = Object.getOwnPropertyNames(attribute);
+    for (var i = 0; i < NombreObjectos.length; i++) {
+        form.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
     }
-    console.log(append);
-//    var dom = document.getElementsByTagName(whereappend).appendChild(form);
-//    return dom;
+    return form;
+}
+
+/**
+ * Funcion que crea formularios
+ * @param {object} objeto con todos los atributos
+ * @author Christian Falcon
+ * @return DOM
+ */
+function createtag(tag, attribute) {
+    var thistag = document.createElement(tag);
+    var NombreObjectos = Object.getOwnPropertyNames(attribute);
+    for (var i = 0; i < NombreObjectos.length; i++) {
+        thistag.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
+    }
+    return thistag;
 }
 
 /**
@@ -411,10 +477,13 @@ function createform(append, attribute) {
  * @author Christian Falcon
  * @return DOM
  */
-function createinput(append, attribute) {
+function createinput(attribute) {
     var input = document.createElement("input"); //input element, text
-    input.setAttribute(attribute,attribute.value);
-    append.appendChild(input);
+	var NombreObjectos = Object.getOwnPropertyNames(attribute);
+	for (var i = 0; i < NombreObjectos.length; i++) {
+    	input.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
+	}
+   	return input;
 }
 
 /**
@@ -503,18 +572,23 @@ var getupdate = (function() {
                 for (var i = 0; i < accion.length; i++) {
                 accion[i].onclick = function() {
                     var valor = this.parentNode.parentElement;
-                    // obtengo el texto de los th de la tabla
+                    // Obtengo el texto de los th de la tabla
                     var th = valor.parentNode.parentElement.childNodes[1].childNodes[1].cells;
-                    for (var o = 0; o < valor.cells.length; o++) {
+					var parametros = {thisUpdate: this.getAttribute('edit')};
+                    for (var o = 0; o < valor.cells.length; o++) {						
                         var value = valor.cells[o].firstChild.data;
-                        value.trim() ? console.log(value) : 'tag html' ;
-                        console.log(th);
-                        var esto = {atributo:'true'};
-                        var veamos = createform('body',esto);
-                        console.log(veamos)
-//                            var method = thismethod('update');
-//                            ajax.post(uri, {id: valor}, function() {});
-                        
+						parametros['value'] = value;
+						parametros['this'] = th[o].firstChild.data;
+						parametros['type'] = 'text';
+						var input = createinput(parametros);
+						var parameter= {class: 'btn btn-primary'};
+						var boton = createtag('button', parameter);
+						boton.innerHTML = 'Guardar';
+						valor.cells[o].innerHTML = '';
+                        value.trim() ? valor.cells[o].appendChild(input) : valor.cells[o].appendChild(boton) ; // verifico que no tenga html
+						valor.cells[o].firstChild.data = '';
+                            var method = thismethod('update');
+                            ajax.post(uri, {id: valor}, function() {});
                     }
                 }
             } 
