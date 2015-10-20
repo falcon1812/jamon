@@ -446,21 +446,6 @@ function thismethod(method) {
  * @author Christian Falcon
  * @return DOM
  */
-function createform(attribute) {
-    var form = document.createElement("form");
-    var NombreObjectos = Object.getOwnPropertyNames(attribute);
-    for (var i = 0; i < NombreObjectos.length; i++) {
-        form.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
-    }
-    return form;
-}
-
-/**
- * Funcion que crea formularios
- * @param {object} objeto con todos los atributos
- * @author Christian Falcon
- * @return DOM
- */
 function createtag(tag, attribute) {
     var thistag = document.createElement(tag);
     var NombreObjectos = Object.getOwnPropertyNames(attribute);
@@ -468,22 +453,6 @@ function createtag(tag, attribute) {
         thistag.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
     }
     return thistag;
-}
-
-/**
- * Funcion que crear inputs
- * Funcion que crear inputs
- * @param [string|array] el arreglo viene con objetos
- * @author Christian Falcon
- * @return DOM
- */
-function createinput(attribute) {
-    var input = document.createElement("input"); //input element, text
-	var NombreObjectos = Object.getOwnPropertyNames(attribute);
-	for (var i = 0; i < NombreObjectos.length; i++) {
-    	input.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
-	}
-   	return input;
 }
 
 /**
@@ -508,7 +477,7 @@ var thisdelete = (function() {
 
 /**
  * Funcion para crear cosas por Ajax
- * @param 
+ * @param Json
  * @author Christian Falcon
  * @return JavaScript class
  */
@@ -527,11 +496,7 @@ var thiscreate = (function() {
                         var objectovalor = valor[o].value;
                         objectSend[objecto] = objectovalor;
                     }
-                    if (metodo == 'POST') {
-                            ajax.post(method, objectSend, function() {}); 
-                    } else {
-                            ajax.get(method, objectSend, function() {}); 
-                    }
+                    metodo == 'POST' ? ajax.post(method, objectSend, function() {}) : ajax.get(method, objectSend, function() {});
                 }
             } 
         } 
@@ -580,18 +545,76 @@ var getupdate = (function() {
 						parametros['value'] = value;
 						parametros['this'] = th[o].firstChild.data;
 						parametros['type'] = 'text';
-						var input = createinput(parametros);
-						var parameter= {class: 'btn btn-primary'};
-						var boton = createtag('button', parameter);
-						boton.innerHTML = 'Guardar';
+						var input = createtag('input', parametros);
 						valor.cells[o].innerHTML = '';
-                        value.trim() ? valor.cells[o].appendChild(input) : valor.cells[o].appendChild(boton) ; // verifico que no tenga html
+						// Verifico que no tenga html
+                        if(value.trim()) {
+							valor.cells[o].appendChild(input);
+						} else {
+							var parameter = {};
+							for (var a = 0; a < 2; a++) {
+								if (a == 1) {
+									parameter['class'] = 'btn btn-primary';
+									parameter['update'] = this.getAttribute('edit');
+									var texto = 'Guardar';
+								} else {
+									parameter['class'] = 'btn btn-danger';
+									var texto = 'Cancelar';
+								}
+								var boton = createtag('p', parameter);
+								boton.innerHTML = texto;
+								valor.cells[o].appendChild(boton); 
+							}
+						}
 						valor.cells[o].firstChild.data = '';
-                            var method = thismethod('update');
-                            ajax.post(uri, {id: valor}, function() {});
                     }
+					thisupdate(function(){});
                 }
             } 
         }
     return getupdate;
+})();
+
+/**
+ * Funcion que actualiza datos de registro
+ * @param string [id]
+ * @author Christian Falcon 
+ * @return boolean
+ */
+var thisupdate = (function() {
+    thisupdate: function thisupdate() {
+            var accion = getElement('update');
+                for (var i = 0; i < accion.length; i++) {
+                accion[i].onclick = function() {
+                    // Obtengo el valor de create y verifico su metodo
+					var esto = this.parentNode.parentElement;
+                    var id = esto.cells[0].children[0].getAttribute('thisupdate');
+                    var method = thismethod('update'); // metodo del controlador en donde este
+					var valor = esto.querySelectorAll('[this]');
+                    var objectSend = {};
+					objectSend['id'] = id;
+                    for (var o = 0; o < valor.length; o++) {
+                        var objecto = valor[o].getAttribute('this');
+                        var objectovalor = valor[o].value;
+                        objectSend[objecto] = objectovalor;
+                    }
+                    ajax.post(method, objectSend, function() {});
+                }
+            }
+        }
+    return thisupdate;
+})();
+
+/**
+ * Correa de inicio de CRUD
+ * @author Christian Falcon
+ * @return Start :D
+ */
+var bootstrap = (function() {
+	bootstrap: function bootstrap() {
+		thiscreate(function(){});
+		thisdelete(function(){});
+		getupdate(function(){});
+	}
+	return bootstrap;
 })();
