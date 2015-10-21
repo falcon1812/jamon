@@ -446,8 +446,9 @@ function thismethod(method) {
  */
 function createtag(tag, attribute) {
     var thistag = document.createElement(tag);
-    var NombreObjectos = Object.getOwnPropertyNames(attribute);
+    var NombreObjectos = Object.getOwnPropertyNames(attribute); // Obtengo los atributos por separado.
     for (var i = 0; i < NombreObjectos.length; i++) {
+		// Los recorro y se lo asigno al elemento.
         thistag.setAttribute(NombreObjectos[i], attribute[NombreObjectos[i]]);
     }
     return thistag;
@@ -466,7 +467,7 @@ var thisdelete = (function() {
                 accion[i].onclick = function() {
                     var valor = this.getAttribute('delete');
                     var method = thismethod('destroy');
-					this.parentNode.parentElement.remove();
+					this.parentNode.parentElement.remove(); // Voy a padre y elimino el html, luego en la BD.
                     ajax.post(method, {id: valor}, function() {});
                 }
             } 
@@ -488,13 +489,14 @@ var thiscreate = (function() {
                     // Obtengo el valor de create y verifico su metodo
                     var metodo = this.getAttribute('create').toUpperCase(); 
                     var method = thismethod('create'); // metodo del controlador en donde este
-                    var valor = this.querySelectorAll('[this]');
+                    var valor = this.querySelectorAll('[this]'); // busco todos los que tengan [this]
                     var objectSend = {};
                     for (var o = 0; o < valor.length; o++) {
                         var objecto = valor[o].getAttribute('this');
                         var objectovalor = valor[o].value;
                         objectSend[objecto] = objectovalor;
                     }
+					// Veo porque metodo fue enviado [POST,GET]
                     metodo == 'POST' ? ajax.post(method, objectSend, function() {}) : ajax.get(method, objectSend, function() {});
                 }
             } 
@@ -510,6 +512,7 @@ var thiscreate = (function() {
  */
 function debug(withFn) {
     var nombre, fn;
+	// Nombre se refiere al nombre de la funcion y fn al codigo de esa funcion
     for (nombre in window) {
         fn = window[nombre];
         if (typeof fn === 'function') {
@@ -534,11 +537,13 @@ var afterupdate = (function() {
 	afterupdate: function afterupdate(esto) {
 		for (var i = 0; i < esto.cells.length; i++) {
 			var value = esto.cells[i].firstChild.value;
+			// Verifico que value no este indefinida
 			if (typeof(value) !== 'undefined') {
 				esto.cells[i].innerHTML = value;
 			} else {
 				var id = esto.cells[i].lastChild.getAttribute('update');
 				esto.cells[i].innerHTML = '';
+				// Creo los dos botones a usar
 				for (var a = 0; a < 2; a++) {
 					var parameter = {};
 					if (a == 1) {
@@ -552,12 +557,13 @@ var afterupdate = (function() {
 						var texto = 'Eliminar';
 						var tipo = 'button';
 					}
-					var boton = createtag(tipo, parameter);
+					var boton = createtag(tipo, parameter); // Creo contenido html (DOM)
 					boton.innerHTML = texto;
 					esto.cells[i].appendChild(boton); 
 				}
 			}
 		}
+		// Llamo a las otras funciones para no perder estas funcionalidades
 		getupdate(function(){});
 		thisdelete(function(){});
 	}
