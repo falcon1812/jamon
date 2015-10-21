@@ -89,7 +89,7 @@ var controller = (function () {
  * @author Christian Falcon
  * @return JavaScript class
  */
-(function(){
+var listo = (function(){
     var listoListado,
         DOMContentLoaded,
         class2type = {};
@@ -111,7 +111,6 @@ var controller = (function () {
         holdReady: function(wait) {
             if (wait) {
                 ObjetoListo.readyWait++;
-                console.log('prueba');
             } else {
                 ObjetoListo.ready(true);
             }
@@ -124,7 +123,6 @@ var controller = (function () {
                 if (!document.body) {
                     return setTimeout(ObjetoListo.ready, 1);
                 }
-
                 // Guardo que el DOM esta listo
                 ObjetoListo.estaListo = true;
                 // Si algun evento dentro del DOM es disparado entra aca
@@ -468,6 +466,7 @@ var thisdelete = (function() {
                 accion[i].onclick = function() {
                     var valor = this.getAttribute('delete');
                     var method = thismethod('destroy');
+					this.parentNode.parentElement.remove();
                     ajax.post(method, {id: valor}, function() {});
                 }
             } 
@@ -526,6 +525,46 @@ function debug(withFn) {
 }
 
 /**
+ * Funcion que hace algo, nojodas
+ * @param [this]
+ * @author Christian Falcon
+ * @return JavaScript class
+ */
+var afterupdate = (function() {
+	afterupdate: function afterupdate(esto) {
+		for (var i = 0; i < esto.cells.length; i++) {
+			var value = esto.cells[i].firstChild.value;
+			if (typeof(value) !== 'undefined') {
+				esto.cells[i].innerHTML = value;
+			} else {
+				var id = esto.cells[i].lastChild.getAttribute('update');
+				esto.cells[i].innerHTML = '';
+				for (var a = 0; a < 2; a++) {
+					var parameter = {};
+					if (a == 1) {
+						parameter['class'] = 'btn btn-primary';
+						parameter['edit'] = id;
+						var texto = 'Editar';
+						var tipo = 'p';
+					} else {
+						parameter['class'] = 'btn btn-danger';
+						parameter['delete'] = id;
+						var texto = 'Eliminar';
+						var tipo = 'button';
+					}
+					var boton = createtag(tipo, parameter);
+					boton.innerHTML = texto;
+					esto.cells[i].appendChild(boton); 
+				}
+			}
+		}
+		getupdate(function(){});
+		thisdelete(function(){});
+	}
+	return afterupdate;
+})();
+
+/**
  * Funcion para editar cosas por Ajax
  * @param id elemento
  * @author Christian Falcon
@@ -540,7 +579,7 @@ var getupdate = (function() {
                     // Obtengo el texto de los th de la tabla
                     var th = valor.parentNode.parentElement.childNodes[1].childNodes[1].cells;
 					var parametros = {thisUpdate: this.getAttribute('edit')};
-                    for (var o = 0; o < valor.cells.length; o++) {						
+                    for (var o = 0; o < valor.cells.length; o++) {			
                         var value = valor.cells[o].firstChild.data;
 						parametros['value'] = value;
 						parametros['this'] = th[o].firstChild.data;
@@ -548,17 +587,18 @@ var getupdate = (function() {
 						var input = createtag('input', parametros);
 						valor.cells[o].innerHTML = '';
 						// Verifico que no tenga html
-                        if(value.trim()) {
+                        if(typeof(value) !== "undefined" && value.trim()) {
 							valor.cells[o].appendChild(input);
 						} else {
-							var parameter = {};
 							for (var a = 0; a < 2; a++) {
+								var parameter = {};
 								if (a == 1) {
 									parameter['class'] = 'btn btn-primary';
 									parameter['update'] = this.getAttribute('edit');
 									var texto = 'Guardar';
 								} else {
 									parameter['class'] = 'btn btn-danger';
+									parameter['cancel'] = this.getAttribute('edit');
 									var texto = 'Cancelar';
 								}
 								var boton = createtag('p', parameter);
@@ -577,14 +617,19 @@ var getupdate = (function() {
 
 /**
  * Funcion que actualiza datos de registro
- * @param string [id]
+ * @param json
  * @author Christian Falcon 
  * @return boolean
  */
 var thisupdate = (function() {
     thisupdate: function thisupdate() {
-            var accion = getElement('update');
+			var accion = getElement('update');
+			var cancel = getElement('cancel');
                 for (var i = 0; i < accion.length; i++) {
+				cancel[i].onclick = function() {
+					var esto = this.parentNode.parentElement;
+					afterupdate(esto);
+				}
                 accion[i].onclick = function() {
                     // Obtengo el valor de create y verifico su metodo
 					var esto = this.parentNode.parentElement;
@@ -599,6 +644,7 @@ var thisupdate = (function() {
                         objectSend[objecto] = objectovalor;
                     }
                     ajax.post(method, objectSend, function() {});
+					afterupdate(esto);
                 }
             }
         }
@@ -608,13 +654,12 @@ var thisupdate = (function() {
 /**
  * Correa de inicio de CRUD
  * @author Christian Falcon
- * @return Start :D
+ * @return Start the jamooooooooon :D
  */
-var bootstrap = (function() {
-	bootstrap: function bootstrap() {
+function Crud(debugMode = null) {	
+		debugMode && debug(function(nombre, fn){console.log("llamada a " + nombre)});
 		thiscreate(function(){});
 		thisdelete(function(){});
+		thisupdate(function(){});
 		getupdate(function(){});
 	}
-	return bootstrap;
-})();
