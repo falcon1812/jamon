@@ -662,7 +662,8 @@ var thisupdate = (function() {
  * @author Christian Falcon
  * @return Start the jamooooooooon :D
  */
-function Crud(debugMode = null) {	
+function Crud(Debug) {
+		var debugMode = Debug || false;
 		debugMode && debug(function(nombre, fn){console.log("llamada a " + nombre)});
 		thiscreate(function(){});
 		thisdelete(function(){});
