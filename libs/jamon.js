@@ -422,6 +422,7 @@ function cleanString(valor, elemento)
     } else {
         resultado = valor.replace(elemento ,'');
     }
+    resultado.indexOf('//') >= 0 ? resultado = resultado.replace('//','/') : resultado; 
     return resultado;
 }
 
@@ -433,8 +434,12 @@ function cleanString(valor, elemento)
  */
 function thismethod(method) {
     var controlador = window.location.pathname.split("/");
-    var url = controlador[1] + '/' + method + '/';
+    if (controlador[1] == window.location.pathname) {
+    var url = controlador[1] + '/' + method;
     var uri = cleanString(url, '.,#?'); // Limpio la url de variables y esas cosas
+    } else {
+        var uri = cleanString(window.location.pathname + '/' + method, '?');
+    }
     return uri;
 }
 
@@ -548,6 +553,7 @@ var afterupdate = (function() {
 					var parameter = {};
 					if (a == 1) {
 						parameter['class'] = 'btn btn-primary';
+                        parameter['style'] = 'margin-left: 5px;';
 						parameter['edit'] = id;
 						var texto = 'Editar';
 						var tipo = 'p';
@@ -588,7 +594,7 @@ var getupdate = (function() {
                     for (var o = 0; o < valor.cells.length; o++) {			
                         var value = valor.cells[o].firstChild.data;
 						parametros['value'] = value;
-						parametros['this'] = th[o].firstChild.data;
+						parametros['this'] = th[o].firstChild.data.toLowerCase();
 						parametros['type'] = 'text';
 						var input = createtag('input', parametros);
 						valor.cells[o].innerHTML = '';
@@ -600,6 +606,7 @@ var getupdate = (function() {
 								var parameter = {};
 								if (a == 1) {
 									parameter['class'] = 'btn btn-primary';
+                                    parameter['style'] = 'margin-left: 5px;';
 									parameter['update'] = this.getAttribute('edit');
 									var texto = 'Guardar';
 								} else {
@@ -655,6 +662,14 @@ var thisupdate = (function() {
             }
         }
     return thisupdate;
+})();
+
+var thisclick = (function() {
+	thisclick: function thisclick() {
+		var thefunction = getElement('thisclick');
+		// aniadir todos las funciones para onclick elemento de dom
+	}
+	return thisclick;
 })();
 
 /**
